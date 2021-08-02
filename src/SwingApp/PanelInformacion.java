@@ -22,43 +22,47 @@ import reyes.Jugador;
 import reyes.Tablero;
 
 public class PanelInformacion extends JPanel {
-	int i = 0;
-
+	
+	private int i = 0;
 	private static final long serialVersionUID = -6580547458892714155L;
 	private JTextPane info;
 	private List<JButton> botones;
 	private List<Jugador> jugadores;
+	private JPanel panelBotones; 
+	private JButton btnRendirse;
+	private JButton btnPuntajesDinastia;
+	private GUI ventana;
 
-	private VentanaJueguito ventana;
-
-	PanelInformacion(VentanaJueguito ventana, List<Jugador> jugadores, int largoPanel, int altoPanel) {
-		this.ventana=ventana;
+	PanelInformacion(GUI ventana, List<Jugador> jugadores, int largoPanel, int altoPanel) {
+		this.ventana = ventana;
 		this.jugadores = jugadores;
+		
 		setLayout(new BorderLayout());
 		info = new JTextPane();
 		info.setEditable(false);
 		info.setBackground(new Color(0xE3BB86));
 		info.setForeground(Color.BLACK);
-		info.setFont(new Font("Arial",Font.CENTER_BASELINE,15));
+		info.setFont(new Font("Arial", Font.CENTER_BASELINE, 15));
+		
 		StyledDocument doc = info.getStyledDocument();
 		SimpleAttributeSet center = new SimpleAttributeSet();
 		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
 		doc.setParagraphAttributes(0, doc.getLength(), center, false);
-		
+
 		this.add(info, BorderLayout.CENTER);
-		
-		JPanel panelBotones = new JPanel();
-		botones=new ArrayList<JButton>();
-		panelBotones.setLayout(new GridLayout(jugadores.size()+1, 1));
-		JButton botonRendirse=new JButton("Rendirse");
-		panelBotones.add(botonRendirse);
-		botonRendirse.addActionListener(new ActionListener() {
+
+		panelBotones = new JPanel();
+		botones = new ArrayList<JButton>();
+		panelBotones.setLayout(new GridLayout(jugadores.size() + 1, 1));
+		btnRendirse = new JButton("Rendirse");
+		panelBotones.add(btnRendirse);
+		btnRendirse.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				rendirse();
 			}
 		});
 		while (i < jugadores.size()) {
-			JButton boton = new JButton("Ver puntaje tablero " + (i + 1));
+			JButton boton = new JButton("Tablero " + (i + 1) + ": 0 puntos");
 			botones.add(boton);
 			boton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -68,17 +72,17 @@ public class PanelInformacion extends JPanel {
 			panelBotones.add(boton);
 			i++;
 		}
-		panelBotones.setPreferredSize(new Dimension(largoPanel,altoPanel/4));
+		panelBotones.setPreferredSize(new Dimension(largoPanel, altoPanel / 4));
 		this.add(panelBotones, BorderLayout.SOUTH);
 	}
 
-	protected void rendirse() {
-		ventana.rendirse();
+	private void rendirse() {
+		ventana.salirDeVentana();
 	}
 
 	protected void mostrarPuntaje(Object object) {
 		String texto = ((JButton) object).getText();
-		int indice = Character.getNumericValue(texto.charAt(texto.length() - 1));
+		int indice = Character.getNumericValue(texto.charAt(8));
 
 		Tablero tablero = jugadores.get(indice - 1).getTablero();
 		String puntaje = tablero.puntajeTotal(this);
@@ -90,15 +94,37 @@ public class PanelInformacion extends JPanel {
 	}
 
 	public void deshabilitarBotones() {
-		for(JButton boton:botones) {
+		for (JButton boton : botones) {
 			boton.setEnabled(false);
 		}
 	}
 
 	public void habilitarBotones() {
-		for(JButton boton:botones) {
+		for (JButton boton : botones) {
 			boton.setEnabled(true);
-		}		
+		}
+	}
+
+	public void setTextoBtnRendirse(String texto) {
+		btnRendirse.setText(texto);
+	}
+
+	public void actualizarPuntaje(int indice) {
+		Tablero tablero = jugadores.get(indice).getTablero();
+		int puntaje = tablero.puntajeTotal(null, 0);
+		JButton boton = botones.get(indice);
+		boton.setText("Tablero " + (indice + 1) + ": " + puntaje + " puntos");
+	}
+
+	public void initBtnPuntajesAcumulados() {
+		btnPuntajesDinastia=new JButton("Ver puntajes Acumulados:");
+		btnPuntajesDinastia.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				ventana.mostrarPuntajesAcumulados();
+			}
+		});
+		panelBotones.setLayout(new GridLayout(jugadores.size()+2,1));
+		panelBotones.add(btnPuntajesDinastia);
 	}
 
 }

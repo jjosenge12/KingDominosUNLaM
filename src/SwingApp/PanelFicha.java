@@ -18,17 +18,17 @@ public class PanelFicha extends JPanel {
 
 	private static final long serialVersionUID = 5537172421677141208L;
 	private Ficha ficha;
-	private static final int TAM_FICHA = VentanaJueguito.getTAM_FICHA();
+	private static final int TAM_FICHA = GUI.getTAM_FICHA();
 	private static final int LARGO_CORONA = 22;
-	private int x, y;
+	private int columna, fila;
 	private BufferedImage bufferFicha;
 	private double escalaLargo;
 	private double escalaAlto;
 	private boolean seteada = false;
 
-	public PanelFicha(Ficha f, int y, int x) {
-		this.x = x;
-		this.y = y;
+	public PanelFicha(Ficha f, int fila, int columna) {
+		this.columna = columna;
+		this.fila = fila;
 		this.ficha = f;
 		this.escalaLargo = 1;
 		this.escalaAlto = 1;
@@ -36,9 +36,9 @@ public class PanelFicha extends JPanel {
 		bufferFicha = getTexturaFicha(f);
 	}
 
-	public PanelFicha(Ficha f, int y, int x, double escalaLargo, double escalaAlto) {
-		this.x = x;
-		this.y = y;
+	public PanelFicha(Ficha f, int fila, int columna, double escalaLargo, double escalaAlto) {
+		this.columna = columna;
+		this.fila = fila;
 		this.ficha = f;
 		this.escalaLargo = escalaLargo;
 		this.escalaAlto = escalaAlto;
@@ -50,28 +50,27 @@ public class PanelFicha extends JPanel {
 		BufferedImage imagen = null;
 
 		if (f == null)
-			return VentanaJueguito.bufferVacio;
+			return GUI.bufferVacio;
 		else if (f.getId() < 0) {
 			int indice = f.getId();
 			BufferedImage castillo = null;
 			seteada = true;
 			switch (indice) {
 			case -1:
-				castillo = VentanaJueguito.bufferCastilloAmarillo;
+				castillo = GUI.bufferCastilloAmarillo;
 				break;
 			case -2:
-				castillo = VentanaJueguito.bufferCastilloAzul;
+				castillo = GUI.bufferCastilloAzul;
 				break;
 			case -3:
-				castillo = VentanaJueguito.bufferCastilloRojo;
+				castillo = GUI.bufferCastilloRojo;
 				break;
 			case -4:
-				castillo = VentanaJueguito.bufferCastilloVerde;
+				castillo = GUI.bufferCastilloVerde;
 				break;
 			}
 			return castillo;
 		} else {
-//			int rotacion = f.getRotacion()-1;
 			int idFicha = f.getId() - 2;
 			/*
 			 * Nos traemos una copia de bufferCarta, puesto que vamos a dibujar las coronas.
@@ -79,14 +78,14 @@ public class PanelFicha extends JPanel {
 			 * perderíamos la textura original. Esto genera un bug para los mazos
 			 * personalizados que pueden reutilizar la misma textura con coronas distintas.
 			 */
-			ColorModel cm = VentanaJueguito.bufferCarta.getColorModel();
-			boolean isAlphaPremultiplied = VentanaJueguito.bufferCarta.isAlphaPremultiplied();
+			ColorModel cm = GUI.bufferCarta.getColorModel();
+			boolean isAlphaPremultiplied = GUI.bufferCarta.isAlphaPremultiplied();
 			/*
 			 * Antes de hacer la copia, primero obtenemos la subimagen que vamos a cortar.
 			 * De esta manera nos evitamos copiar las 96 fichas para solo usar una.
 			 * Implementar esto bajó el render de 240ms a 40ms
 			 */
-			imagen = VentanaJueguito.bufferCarta.getSubimage((idFicha % 16) * getTamFicha(),
+			imagen = GUI.bufferCarta.getSubimage((idFicha % 16) * getTamFicha(),
 					(idFicha == 96 ? idFicha / 16 - 1 : idFicha / 16) * (getTamFicha()), getTamFicha(), getTamFicha());
 			// Dado que la imagen fue cortada, hay que obtener un raster compatible
 			WritableRaster raster = imagen.copyData(imagen.getRaster().createCompatibleWritableRaster());
@@ -115,7 +114,7 @@ public class PanelFicha extends JPanel {
 			else
 				g2d.translate(7, 5);
 			for (int i = 0; i < cantidadCoronas; i++) {
-				g2d.drawImage(VentanaJueguito.bufferCorona, null, null);
+				g2d.drawImage(GUI.bufferCorona, null, null);
 				g2d.translate(LARGO_CORONA * escalaLargo, 0);
 			}
 
@@ -127,11 +126,11 @@ public class PanelFicha extends JPanel {
 	public void fichaClickeada(int xMouse, int yMouse) {
 		if (PanelTableroSeleccion.idCartaElegida == Integer.MIN_VALUE)
 			return;
-		VentanaJueguito.coordenadasElegidas[0] = x;
-		VentanaJueguito.coordenadasElegidas[1] = y;
-		VentanaJueguito.coordenadasElegidas[2] = xMouse;
-		VentanaJueguito.coordenadasElegidas[3] = yMouse;
-		VentanaJueguito.getLatchCartaElegida().countDown();
+		GUI.coordenadasElegidas[0] = columna;
+		GUI.coordenadasElegidas[1] = fila;
+		GUI.coordenadasElegidas[2] = xMouse;
+		GUI.coordenadasElegidas[3] = yMouse;
+		GUI.getLatchPosicionElegida().countDown();
 	}
 
 	public Ficha getFicha() {
@@ -169,7 +168,7 @@ public class PanelFicha extends JPanel {
 	}
 
 	public void mouseEncima(double escala) {
-		Carta c = VentanaJueguito.pSeleccion.getCartaElegida();
+		Carta c = GUI.pSeleccion.getCartaElegida();
 		if (c == null || ficha != null)
 			return;
 
@@ -188,11 +187,11 @@ public class PanelFicha extends JPanel {
 	}
 
 	public int getFila() {
-		return y;
+		return fila;
 	}
 
 	public int getColumna() {
-		return x;
+		return columna;
 	}
 
 	public void pintarPreview(Ficha ficha) {

@@ -62,12 +62,12 @@ public class TestFrame extends JFrame {
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 		try {
-			VentanaJueguito.bufferCastilloAmarillo = ImageIO.read(texturaCastilloAmarillo);
-			VentanaJueguito.bufferCastilloAzul = ImageIO.read(texturaCastilloAzul);
-			VentanaJueguito.bufferCastilloRojo = ImageIO.read(texturaCastilloRojo);
-			VentanaJueguito.bufferCastilloVerde = ImageIO.read(texturaCastilloVerde);
-			VentanaJueguito.bufferCarta = ImageIO.read(texturaCarta);
-			VentanaJueguito.bufferVacio = ImageIO.read(texturaVacia);
+			GUI.bufferCastilloAmarillo = ImageIO.read(texturaCastilloAmarillo);
+			GUI.bufferCastilloAzul = ImageIO.read(texturaCastilloAzul);
+			GUI.bufferCastilloRojo = ImageIO.read(texturaCastilloRojo);
+			GUI.bufferCastilloVerde = ImageIO.read(texturaCastilloVerde);
+			GUI.bufferCarta = ImageIO.read(texturaCarta);
+			GUI.bufferVacio = ImageIO.read(texturaVacia);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Error generando imagenes clase VentanaJueguito");

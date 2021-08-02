@@ -7,31 +7,28 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.ImageIcon;
 
 import reyes.Carta;
 import reyes.Ficha;
-import reyes.Partida;
 
 public class PanelTableroSeleccion extends JPanel {
 
 	private static final long serialVersionUID = 6840011839081352510L;
-	private CountDownLatch startLatch = new CountDownLatch(1);
+	private CountDownLatch latchCartaElegida = new CountDownLatch(1);
 	private Carta cartaElegida;
 	public static volatile int idCartaElegida;
 	private double escala;
 	private int largoPanel;
 	private int altoPanel;
-	private Partida partida;
 	
-	public PanelTableroSeleccion(List<Carta> cartasAElegir, int largoPanel, int altoPanel,Partida partida) {
-		this.partida=partida;
+	public PanelTableroSeleccion(List<Carta> cartasAElegir, int largoPanel, int altoPanel) {
 		this.largoPanel=largoPanel;
 		this.altoPanel=altoPanel;
 		this.setBackground(new Color(0x614828));
-		int tamFicha = VentanaJueguito.getTAM_FICHA();
+		int tamFicha = GUI.getTAM_FICHA();
 		double altoFicha=altoPanel/4;
 		escala=altoFicha/tamFicha;
 		int tamFichaEscalado=(int) (tamFicha*escala);
@@ -62,15 +59,15 @@ public class PanelTableroSeleccion extends JPanel {
 		}
 	}
 
-	public CountDownLatch getStartLatch() {
-		return startLatch;
+	public CountDownLatch getLatchCartaElegida() {
+		return latchCartaElegida;
 	}
 	public Carta getCartaElegida() {
 		return cartaElegida;
 	}
 
-	public void setStartLatch(CountDownLatch countDownLatch) {
-		startLatch = countDownLatch;
+	public void setLatchCartaElegida(CountDownLatch countDownLatch) {
+		latchCartaElegida = countDownLatch;
 	}
 	
 	protected void onRotarCartaClick() {
@@ -80,14 +77,14 @@ public class PanelTableroSeleccion extends JPanel {
 	}
 
 	public synchronized void onCartaElegida(Carta carta) {
-		if(!partida.esTurnoJugadorLocal())
+		if(!GUI.isTurnoActual())
 			return;
 		this.cartaElegida = carta;
 		idCartaElegida = carta.getId();
 		this.removeAll();
 		
 
-		int tamFicha= VentanaJueguito.getTAM_FICHA();
+		int tamFicha= GUI.getTAM_FICHA();
 		int tamFichaEscalado=(int) (tamFicha*escala);
 		int centradoLargo=(largoPanel/2)-tamFichaEscalado;
 		int centradoAlto=(altoPanel/2)-tamFichaEscalado;
@@ -151,7 +148,7 @@ public class PanelTableroSeleccion extends JPanel {
 			}
 		});
 		this.repaint();
-		startLatch.countDown();
+		latchCartaElegida.countDown();
 	}
 
 	public void setCartaElegida(Carta c) {

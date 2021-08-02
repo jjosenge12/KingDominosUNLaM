@@ -18,9 +18,7 @@ import java.util.List;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -30,7 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import SwingApp.PanelFicha;
-import SwingApp.VentanaJueguito;
+import SwingApp.GUI;
 import netcode.Cliente;
 import netcode.MensajeAServidor;
 import netcode.Sala;
@@ -38,19 +36,19 @@ import reyes.Carta;
 import reyes.Ficha;
 import reyes.Mazo;
 
-public class Menu extends JDialog {
+public class Menu extends JFrame {
 
 	private static final long serialVersionUID = -7979669249255750493L;
 	private JPanel contentPane;
 	private List<JTextField> txtJugadores = new ArrayList<JTextField>(4);
 	private JComboBox<Integer> cantJugadores;
-	private JCheckBox rdbtnElGranDuelo;
+	private JRadioButton rdbtnElGranDuelo;
 	private List<JRadioButton> rdbtns;
 	private JLabel lblNewLabel;
 	private JComboBox<String> texturas;
-	private JCheckBox rdbtnDinastia;
-	private JCheckBox rdbtnElReinoMedio;
-	private JCheckBox rdbtnArmonia;
+	private JRadioButton rdbtnDinastia;
+	private JRadioButton rdbtnElReinoMedio;
+	private JRadioButton rdbtnArmonia;
 	private JComboBox<String> mazos;
 	private JLabel lblNewLabel_1;
 	private JButton btnNewButton;
@@ -119,20 +117,9 @@ public class Menu extends JDialog {
 		File[] files = f.listFiles(textFilter);
 
 		for (File file : files) {
-//			if (file.isDirectory()) {
-//				System.out.print("directory:");
-//			} else {
-//				System.out.print("     file:");
-//			}
-//			try {
-//				System.out.println(file.getCanonicalPath());
-//				System.out.println(file.getName().substring(0, file.getName().length() - 4));
 			mazos.addItem(file.getName().substring(0, file.getName().length() - 4));
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
 		}
-		mazos.setSelectedIndex(0);
+		mazos.setSelectedIndex(2);
 		GridBagConstraints gbc_comboBox = new GridBagConstraints();
 		gbc_comboBox.insets = new Insets(0, 0, 5, 5);
 		gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
@@ -179,18 +166,7 @@ public class Menu extends JDialog {
 		files = f.listFiles(textFilter);
 
 		for (File file : files) {
-//			if (file.isDirectory()) {
-//				System.out.print("directory:");
-//			} else {
-//				System.out.print("     file:");
-//			}
-//			try {
-//				System.out.println(file.getCanonicalPath());
-//				System.out.println(file.getName().substring(0, file.getName().length() - 4));
 			texturas.addItem(file.getName().substring(0, file.getName().length() - 4));
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
 		}
 		texturas.setSelectedIndex(1);
 		GridBagConstraints gbc_texturas = new GridBagConstraints();
@@ -221,13 +197,13 @@ public class Menu extends JDialog {
 		gbc_cantJugadores.gridy = 2;
 		panel.add(cantJugadores, gbc_cantJugadores);
 
-		//ButtonGroup radioButtons = new ButtonGroup();
-		rdbtnElGranDuelo = new JCheckBox("El gran duelo");
-		//radioButtons.add(rdbtnElGranDuelo);
+		ButtonGroup radioButtons = new ButtonGroup();
+		rdbtnElGranDuelo = new JRadioButton("El gran duelo");
+		radioButtons.add(rdbtnElGranDuelo);
 		GridBagConstraints gbc_rdbtnElGranDuelo = new GridBagConstraints();
 		gbc_rdbtnElGranDuelo.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnElGranDuelo.gridx = 4;
-		gbc_rdbtnElGranDuelo.gridy = 2;
+		gbc_rdbtnElGranDuelo.gridy = 3;
 		panel.add(rdbtnElGranDuelo, gbc_rdbtnElGranDuelo);
 
 		JTextField txtJugador1 = new JTextField();
@@ -252,8 +228,8 @@ public class Menu extends JDialog {
 		gbc_rdbtnBot1.gridy = 4;
 		panel.add(rdbtnBot1, gbc_rdbtnBot1);
 
-		rdbtnDinastia = new JCheckBox("Dinastia");
-		//radioButtons.add(rdbtnDinastia);
+		rdbtnDinastia = new JRadioButton("Dinastia");
+		radioButtons.add(rdbtnDinastia);
 		GridBagConstraints gbc_rdbtnNewRadioButton = new GridBagConstraints();
 		gbc_rdbtnNewRadioButton.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnNewRadioButton.gridx = 4;
@@ -280,8 +256,8 @@ public class Menu extends JDialog {
 		gbc_rdbtnBot2.gridy = 5;
 		panel.add(rdbtnBot2, gbc_rdbtnBot2);
 
-		rdbtnElReinoMedio = new JCheckBox("El reino medio");
-		//radioButtons.add(rdbtnElReinoMedio);
+		rdbtnElReinoMedio = new JRadioButton("El reino medio");
+		radioButtons.add(rdbtnElReinoMedio);
 		GridBagConstraints gbc_rdbtnNewRadioButton_1 = new GridBagConstraints();
 		gbc_rdbtnNewRadioButton_1.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnNewRadioButton_1.gridx = 4;
@@ -311,8 +287,8 @@ public class Menu extends JDialog {
 		gbc_rdbtnBot3.gridy = 6;
 		panel.add(rdbtnBot3, gbc_rdbtnBot3);
 
-		rdbtnArmonia = new JCheckBox("Armonia");
-		//radioButtons.add(rdbtnArmonia);
+		rdbtnArmonia = new JRadioButton("Armonia");
+		radioButtons.add(rdbtnArmonia);
 		GridBagConstraints gbc_rdbtnNewRadioButton_2 = new GridBagConstraints();
 		gbc_rdbtnNewRadioButton_2.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnNewRadioButton_2.gridx = 4;
@@ -386,8 +362,8 @@ public class Menu extends JDialog {
 		tempFrame.setContentPane(tempContentPane);
 
 		PanelFicha pF = null;
-		VentanaJueguito.cargarTexturas();
-		VentanaJueguito.cargarTexturaMazo((String) texturas.getSelectedItem());
+		GUI.seleccionarTextura((String) texturas.getSelectedItem());
+		GUI.cargarTexturas();
 		Mazo mazo = new Mazo(48, (String) mazos.getSelectedItem());
 		List<Carta> cartas = mazo.getCartas();
 		int i = 0;
@@ -480,7 +456,7 @@ public class Menu extends JDialog {
 	}
 
 	protected void enviarDatos() {
-		int tamTablero = rdbtnElGranDuelo.isSelected() ? 7 : 5;
+
 		int cant = (int) cantJugadores.getSelectedItem();
 		JTextField txtJugador1 = txtJugadores.get(0);
 		JTextField txtJugador2 = txtJugadores.get(1);
@@ -523,25 +499,24 @@ public class Menu extends JDialog {
 
 		}
 		mensajeCrearPartida += "," + nombreJugadores;
-		mensajeCrearPartida += "," + tamTablero;
+//		mensajeCrearPartida += "," + tamTablero;
 
 		String textura = (String) texturas.getSelectedItem();
 		mensajeCrearPartida += "," + textura;
 		this.setVisible(false);
 		String mazo = (String) mazos.getSelectedItem();
 		mensajeCrearPartida += "," + mazo;
-		String modoDeJuego = "";
+		String modoDeJuego = "Clasico";
+		if (rdbtnElGranDuelo.isSelected())
+			modoDeJuego = "ElGranDuelo";
 		if (rdbtnDinastia.isSelected())
-			modoDeJuego += "Dinastia";
+			modoDeJuego = "Dinastia";
 		if (rdbtnElReinoMedio.isSelected())
-			modoDeJuego += "ReinoMedio";
+			modoDeJuego = "ReinoMedio";
 		if (rdbtnArmonia.isSelected())
-			modoDeJuego += "Armonia";
-		if (modoDeJuego == "") {
-			modoDeJuego = "N";
-		}
+			modoDeJuego = "Armonia";
 		mensajeCrearPartida += "," + modoDeJuego;
-		MensajeAServidor msj = new MensajeAServidor(mensajeCrearPartida, sala, 13);
+		MensajeAServidor msj = new MensajeAServidor(mensajeCrearPartida, sala.getNombreSala(), 13);
 		cliente.enviarMensaje(msj);
 
 		this.dispose();

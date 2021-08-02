@@ -18,7 +18,6 @@ import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-
 import reyes.Carta;
 import reyes.Ficha;
 import reyes.Tablero;
@@ -43,22 +42,22 @@ public class PanelTablero extends JPanel {
 	private int alto;
 	private JLabel nombre;
 
-	public PanelTablero(Tablero tablero, int tamTableroVisual,int numJugador) {
+	public PanelTablero(Tablero tablero, int tamTableroVisual, int numJugador) {
 		setLayout(null);
 		this.tablero = tablero;
 		this.tamTableroVisual = tamTableroVisual;
-		this.numJugador=numJugador;
+		this.numJugador = numJugador;
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		Color cAnterior=g.getColor();
+		Color cAnterior = g.getColor();
 		Color color;
-		if(numJugador==VentanaJueguito.getTurnoJugador()) {
-			color=new Color(0x5C3B04);
-		}else {
-			color=new Color(0xAB7632);
+		if (numJugador == GUI.getTurnoJugadorActual()) {
+			color = new Color(0x5C3B04);
+		} else {
+			color = new Color(0xAB7632);
 		}
 		g.setColor(color);
 		g.fillRect(0, 0, tamTableroVisual, tamTableroVisual);
@@ -71,18 +70,18 @@ public class PanelTablero extends JPanel {
 		 * Por alguna razon llegan panelFicha nulo, y lo mas raro es que a veces llegan
 		 * panelFicha no nulo pero con pFicha.getFicha igual a null
 		 * 
-		 * EDIT: Sucede cuando hay un hilo que todavía esta renderizando PanelFicha. Se arrelgo
-		 * en commit c16ff1f
+		 * EDIT: Sucede cuando hay un hilo que todavía esta renderizando PanelFicha. Se
+		 * arrelgo en commit c16ff1f
 		 */
 		if (pFicha != null && pFicha.getFicha() != null) {
-			JTextPane puntaje=new JTextPane();
-			puntaje.setText(acumPuntos+"");
-			SimpleAttributeSet att=new SimpleAttributeSet();
+			JTextPane puntaje = new JTextPane();
+			puntaje.setText(acumPuntos + "");
+			SimpleAttributeSet att = new SimpleAttributeSet();
 			StyleConstants.setForeground(att, Color.yellow);
 			StyleConstants.setBold(att, true);
-			Document doc=puntaje.getStyledDocument();
+			Document doc = puntaje.getStyledDocument();
 			try {
-				doc.insertString(doc.getLength(),"*"+cantCoronas,att);
+				doc.insertString(doc.getLength(), "*" + cantCoronas, att);
 			} catch (BadLocationException e1) {
 				e1.printStackTrace();
 			}
@@ -116,7 +115,7 @@ public class PanelTablero extends JPanel {
 		if (necesitaRedibujar) {
 			long tiempoInicial = System.currentTimeMillis();
 			reCrearTablero(nombre);
-			System.out.println("Render tableros: " + (System.currentTimeMillis() - tiempoInicial) );
+			System.out.println("Render tableros: " + (System.currentTimeMillis() - tiempoInicial));
 		} else {
 			insertarPFichaEnTablero(fila, columna, fichas);
 
@@ -165,7 +164,7 @@ public class PanelTablero extends JPanel {
 		 */
 		int fichasMaximas = tablero.getTamanio() + 2;
 		double tamFicha = tamTableroVisual / fichasMaximas;
-		escala = tamFicha / VentanaJueguito.getTAM_FICHA();
+		escala = tamFicha / GUI.getTAM_FICHA();
 
 		int desplVertical = Math.min(tablero.getTamanio() - (fMax - fMin + 1), 2);
 		int desplHorizontal = Math.min(tablero.getTamanio() - (cMax - cMin + 1), 2);
@@ -179,33 +178,35 @@ public class PanelTablero extends JPanel {
 
 		int centradoAlto = (finFilasAMostrar - inicioFilasAMostrar == tablero.getTamanio() - 1) ? alto : 0;
 
-		int centradoLargo = (finColumnasAMostrar - inicioColumnasAMostrar== tablero.getTamanio() - 1) ? largo : 0;
-		if(fMin==fMax && cMax==cMin) {
-			centradoAlto=alto;
-			centradoLargo=largo;
+		int centradoLargo = (finColumnasAMostrar - inicioColumnasAMostrar == tablero.getTamanio() - 1) ? largo : 0;
+		if (fMin == fMax && cMax == cMin) {
+			centradoAlto = alto;
+			centradoLargo = largo;
 		}
 		/*
 		 * Estas variables son para acomodar el tablero cuando se haya llegado al limite
 		 * de construccion(por ej 5x5)
 		 * 
 		 */
-		
+
 		for (int i = inicioFilasAMostrar, y = 0; i <= finFilasAMostrar; i++, y++) {
 			for (int j = inicioColumnasAMostrar, x = 0; j <= finColumnasAMostrar; j++, x++) {
-				PanelFicha panelFicha = new PanelFicha(fichas[i][j], i, j, escala,escala);
+				PanelFicha panelFicha = new PanelFicha(fichas[i][j], i, j, escala, escala);
 				matrizPaneles[i][j] = panelFicha;
 				panelFicha.setBounds((x * largo) + centradoLargo, (y * alto) + centradoAlto, largo, alto);
-				panelFicha.pintarBorde(fichas[i][j],1,Color.black);
+				panelFicha.pintarBorde(fichas[i][j], 1, Color.black);
 				panelFicha.addMouseListener(new MouseAdapter() {
 
 					@Override
 					public void mouseClicked(MouseEvent e) {
-						panelFicha.fichaClickeada(e.getXOnScreen(),e.getYOnScreen());
+						panelFicha.fichaClickeada(e.getXOnScreen(), e.getYOnScreen());
 					}
+
 					@Override
 					public void mouseEntered(MouseEvent e) {
 						pintarPreview(panelFicha);
 					}
+
 					@Override
 					public void mouseExited(MouseEvent e) {
 						borrarPreview(panelFicha);
@@ -218,7 +219,7 @@ public class PanelTablero extends JPanel {
 		// "debajo"
 		// de las fichas vacias.Estaria bueno cambiar esto
 
-		nombre = new JLabel(nombreJugador,SwingConstants.CENTER);
+		nombre = new JLabel(nombreJugador, SwingConstants.CENTER);
 		nombre.setBounds(0, 0, tamTableroVisual, alto);
 		nombre.setForeground(new Color(0x40FFDE));
 		panelConDimension.add(nombre, 1);
@@ -231,28 +232,34 @@ public class PanelTablero extends JPanel {
 	}
 
 	protected void borrarPreview(PanelFicha pFSeleccionado) {
-		Carta c = VentanaJueguito.pSeleccion.getCartaElegida();
-		if (c == null )
+		if (GUI.pSeleccion == null) {
+			return;
+		}
+		Carta c = GUI.pSeleccion.getCartaElegida();
+		if (c == null)
 			return;
 		int i = pFSeleccionado.getFila() + c.getFichas()[1].getFila();
 		int j = pFSeleccionado.getColumna() + c.getFichas()[1].getColumna();
-		if(i>0 && i<matrizPaneles.length && j > 0 && j < matrizPaneles[i].length) {
+		if (i > 0 && i < matrizPaneles.length && j > 0 && j < matrizPaneles[i].length) {
 			PanelFicha pFVecino = matrizPaneles[i][j];
-			if(pFVecino != null)
+			if (pFVecino != null)
 				pFVecino.mouseAfuera();
 		}
 		pFSeleccionado.mouseAfuera();
 	}
 
 	protected void pintarPreview(PanelFicha pFSeleccionado) {
-		Carta c = VentanaJueguito.pSeleccion.getCartaElegida();
-		if (c == null )
+		if (GUI.pSeleccion == null) {
+			return;
+		}
+		Carta c = GUI.pSeleccion.getCartaElegida();
+		if (c == null)
 			return;
 		int i = pFSeleccionado.getFila() + c.getFichas()[1].getFila();
 		int j = pFSeleccionado.getColumna() + c.getFichas()[1].getColumna();
-		if(i>0 && i<matrizPaneles.length && j > 0 && j < matrizPaneles[i].length) {
+		if (i > 0 && i < matrizPaneles.length && j > 0 && j < matrizPaneles[i].length) {
 			PanelFicha pFVecino = matrizPaneles[i][j];
-			if(pFVecino != null)
+			if (pFVecino != null)
 				pFVecino.pintarPreview(c.getFichas()[1]);
 		}
 		pFSeleccionado.pintarPreview(c.getFichas()[0]);
@@ -265,14 +272,14 @@ public class PanelTablero extends JPanel {
 		int y = (fila - inicioFilasAMostrar);
 		int centradoAlto = (fMax - fMin == tablero.getTamanio() - 1) ? alto : 0;
 		int centradoLargo = (cMax - cMin == tablero.getTamanio() - 1) ? largo : 0;
-		PanelFicha panelFicha = new PanelFicha(fichas[fila][columna], fila, columna, escala,escala);
+		PanelFicha panelFicha = new PanelFicha(fichas[fila][columna], fila, columna, escala, escala);
 		matrizPaneles[fila][columna] = panelFicha;
 		panelFicha.setBounds((x * largo) + centradoLargo, (y * alto) + centradoAlto, largo, alto);
-		panelFicha.pintarBorde(fichas[fila][columna],1,Color.black);
+		panelFicha.pintarBorde(fichas[fila][columna], 1, Color.black);
 		panelFicha.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				panelFicha.fichaClickeada(e.getXOnScreen(),e.getYOnScreen());
+				panelFicha.fichaClickeada(e.getXOnScreen(), e.getYOnScreen());
 			}
 		});
 		panelConDimension.add(panelFicha, 0);

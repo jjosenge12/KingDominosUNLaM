@@ -29,7 +29,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import SwingApp.GUI;
 import netcode.Cliente;
+import netcode.MensajeACliente;
 import netcode.MensajeAServidor;
 import netcode.Sala;
 
@@ -43,15 +45,14 @@ public class SalaDeEspera extends JFrame {
 	private String nombre;
 	private JButton btnEnviar;
 	private Sala sala;
-	private boolean salaPrivada;
-	JButton btnIniciarPartida;
-	Menu menu = null;
+	private JButton btnIniciarPartida;
+	private Menu menu = null;
+	private GUI gui;
 
 	public SalaDeEspera(Sala sala, Cliente cliente) {
 		this.sala = sala;
 		this.cliente = cliente;
 		String nombreCliente = cliente.getNombre();
-		this.salaPrivada = sala.isPrivada();
 
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -59,11 +60,7 @@ public class SalaDeEspera extends JFrame {
 				cerrarSala();
 			}
 		});
-		if (salaPrivada) {
-			setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		} else {
-			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		}
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		this.nombre = sala.getNombreSala();
 		this.setTitle("Usuario:" + nombreCliente + "- Nombre de la sala:" + nombre);
@@ -97,16 +94,6 @@ public class SalaDeEspera extends JFrame {
 			}
 		});
 		menuListaConexion.add(mntmNewMenuItem_1);
-		if (salaPrivada == false) {
-			JMenuItem mntmNewMenuItem_2 = new JMenuItem("Crear sala privada...");
-			mntmNewMenuItem_2.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					crearSalaPrivada();
-				}
-			});
-			menuListaConexion.add(mntmNewMenuItem_2);
-
-		}
 		menuListaConexion.add(menuItemSalirSala);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -154,7 +141,7 @@ public class SalaDeEspera extends JFrame {
 			btnIniciarPartida.setEnabled(true);
 			btnIniciarPartida.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					iniciarPartida();
+					pedirListaUsuariosParaIniciarMenu();
 				}
 			});
 			panel_1.add(btnIniciarPartida);
@@ -163,20 +150,9 @@ public class SalaDeEspera extends JFrame {
 		setVisible(true);
 	}
 
-	protected void iniciarPartida() {
-		// Pide la lista de usuarios al servidor para pasarselo a menu
-		MensajeAServidor mensaje = new MensajeAServidor(cliente.getNombre(), sala, 14);
-		cliente.enviarMensaje(mensaje);
-
-	}
-
-	public void setEnabledBtnIniciarPartida(boolean enabled) {
-		btnIniciarPartida.setEnabled(enabled);
-	}
-
 	protected void crearSalaPrivada() {
 		// mensaje tipo 8:pide la lista de usuarios al servidor
-		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala, 8);
+		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala.getNombreSala(), 8);
 		cliente.enviarMensaje(msj);
 	}
 
@@ -211,16 +187,15 @@ public class SalaDeEspera extends JFrame {
 
 	protected void verTiemposSesion() {
 		// mensaje tipo 7:pide la lista de tiempos al servidor
-		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala, 7);
+		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala.getNombreSala(), 7);
 		cliente.enviarMensaje(msj);
 	}
 
 	protected void cerrarSala() {
 		// mensaje tipo 5:salir de sala
-		// mensaje tipo 10:salir de sala privada
-		int tipoMensaje = salaPrivada ? 10 : 5;
-		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala, tipoMensaje);
+		MensajeAServidor msj = new MensajeAServidor(cliente.getNombre(), sala.getNombreSala(), 5);
 		cliente.enviarMensaje(msj);
+
 	}
 
 	private void enviarMensaje() {
@@ -228,11 +203,117 @@ public class SalaDeEspera extends JFrame {
 		if (!msj.equals("")) {
 			msj = cliente.getNombre() + ":" + textFieldEscrituraMensaje.getText();
 			// mensaje tipo 6:envio de mensaje
-			MensajeAServidor msjAServidor = new MensajeAServidor(msj, sala, 6);
+			MensajeAServidor msjAServidor = new MensajeAServidor(msj, sala.getNombreSala(), 6);
 			cliente.enviarMensaje(msjAServidor);
 			textFieldEscrituraMensaje.setText("");
 		}
 
+	}
+
+	public void mostrarMensaje(String mensaje) {
+		textArea.setText(textArea.getText() + "\n" + mensaje);
+	}
+
+	public void mostrarTiempos(String mensaje) {
+		JOptionPane.showMessageDialog(this, mensaje, "Tiempos de sesion", JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public void mostrarListaUsuarios(String mensaje) {
+		Lobby lobby = cliente.getLobby();
+		boolean puedeCrear = lobby.verificarCantidadSalas(2);
+
+		if (!puedeCrear) {
+			return;
+		}
+
+		String[] opciones = mensaje.split("\n");
+		if (opciones.length > 1) {
+			List<String> listaOpciones = new LinkedList<String>(Arrays.asList(opciones));
+			String nombreCliente = cliente.getNombre();
+			listaOpciones.remove(nombreCliente);
+			opciones = listaOpciones.toArray(new String[listaOpciones.size()]);
+//			String resp = (String) JOptionPane.showInputDialog(null, "Seleccione usuario:", "Crear sala privada",
+//					JOptionPane.DEFAULT_OPTION, null, opciones, opciones[0]);
+//			if (resp != null) {
+//				String[] participantes = { cliente.getNombre(), resp };
+//				String nombreSalaACrear = "Sala privada (" + participantes[0] + ";" + participantes[1] + ")";
+//				String nombreSalaACrearAlternativo = "Sala privada (" + participantes[1] + ";" + participantes[0] + ")";
+//				boolean salaAbierta1 = lobby.isSalaAbierta(nombreSalaACrear);
+//				boolean salaAbierta2 = lobby.isSalaAbierta(nombreSalaACrearAlternativo);
+//
+//				if (salaAbierta1 || salaAbierta2) {
+//					return;
+//				}
+//				// mensaje tipo 9:creacion de sala privada
+//				Sala salaPrivada = new Sala(nombreSalaACrear, true, cliente.getNombre());
+//				long tiempoInicioSesion = System.currentTimeMillis();
+//				salaPrivada.agregarUsuario(participantes[0], tiempoInicioSesion);
+//				salaPrivada.agregarUsuario(participantes[1], tiempoInicioSesion);
+//				MensajeAServidor msj = new MensajeAServidor(null, salaPrivada, 9);
+//				cliente.enviarMensaje(msj);
+//			}
+		} else {
+			JOptionPane.showMessageDialog(this, "No hay mas usuarios en la sala", "No se puede crear sala privada",
+					JOptionPane.WARNING_MESSAGE);
+		}
+	}
+
+	protected void pedirListaUsuariosParaIniciarMenu() {
+		// Pide la lista de usuarios al servidor para pasarselo a menu
+		MensajeAServidor mensaje = new MensajeAServidor(cliente.getNombre(), sala.getNombreSala(), 14);
+		cliente.enviarMensaje(mensaje);
+
+	}
+
+	public void setEnabledBtnIniciarPartida(boolean enabled) {
+		if (btnIniciarPartida != null)
+			btnIniciarPartida.setEnabled(enabled);
+	}
+
+	public void abrirMenuCreacionPartida(String nombresUsuarios) {
+		btnIniciarPartida.setEnabled(false);
+		menu = new Menu(cliente, sala, this, nombresUsuarios);
+	}
+
+	public void menuCerrado() {
+		setEnabledBtnIniciarPartida(true);
+		menu = null;
+	}
+
+	public void actualizarMenu() {
+		if (menu != null) {
+			menu.dispose();
+			pedirListaUsuariosParaIniciarMenu();
+		}
+	}
+
+	public void unirseAPartida(MensajeACliente mensaje) {
+		gui = new GUI(mensaje, this);
+	}
+
+	public void recibirRendicionDeOtroJugador(MensajeACliente mensaje) {
+		gui.recibirRendicionDeOtroJugador(mensaje);
+	}
+
+	public void partidaFinalizada() {
+		gui.partidaFinalizada();
+	}
+
+	public void actualizarTurno(MensajeACliente mensaje) {
+		gui.actualizarTurno(mensaje.getMsjPartida());
+	}
+
+	public void procesarTurnoJugador(MensajeACliente mensaje) {
+		gui.procesarTurnoOtroJugador(mensaje.getMsjPartida());
+	}
+
+	public void ventanaPartidaCerrada() {
+		gui = null;
+		menuCerrado();
+	}
+
+	public Cliente getCliente() {
+		return cliente;
 	}
 
 	public String getNombreSala() {
@@ -269,68 +350,13 @@ public class SalaDeEspera extends JFrame {
 		return "SalaChat [ nombre=" + nombre + "]";
 	}
 
-	public void mostrarMensaje(String mensaje) {
-		textArea.setText(textArea.getText() + "\n" + mensaje);
-	}
-
-	public void mostrarTiempos(String mensaje) {
-		JOptionPane.showMessageDialog(this, mensaje, "Tiempos de sesion", JOptionPane.INFORMATION_MESSAGE);
-	}
-
-	public void mostrarListaUsuarios(String mensaje) {
-		Lobby lobby = cliente.getLobby();
-		boolean puedeCrear = lobby.verificarCantidadSalas(2);
-
-		if (!puedeCrear) {
-			return;
-		}
-
-		String[] opciones = mensaje.split("\n");
-		if (opciones.length > 1) {
-			List<String> listaOpciones = new LinkedList<String>(Arrays.asList(opciones));
-			String nombreCliente = cliente.getNombre();
-			listaOpciones.remove(nombreCliente);
-			opciones = listaOpciones.toArray(new String[listaOpciones.size()]);
-			String resp = (String) JOptionPane.showInputDialog(null, "Seleccione usuario:", "Crear sala privada",
-					JOptionPane.DEFAULT_OPTION, null, opciones, opciones[0]);
-			if (resp != null) {
-				String[] participantes = { cliente.getNombre(), resp };
-				String nombreSalaACrear = "Sala privada (" + participantes[0] + ";" + participantes[1] + ")";
-				String nombreSalaACrearAlternativo = "Sala privada (" + participantes[1] + ";" + participantes[0] + ")";
-				boolean salaAbierta1 = lobby.isSalaAbierta(nombreSalaACrear);
-				boolean salaAbierta2 = lobby.isSalaAbierta(nombreSalaACrearAlternativo);
-
-				if (salaAbierta1 || salaAbierta2) {
-					return;
-				}
-				// mensaje tipo 9:creacion de sala privada
-				Sala salaPrivada = new Sala(nombreSalaACrear, true, cliente.getNombre());
-				long tiempoInicioSesion = System.currentTimeMillis();
-				salaPrivada.agregarUsuario(participantes[0], tiempoInicioSesion);
-				salaPrivada.agregarUsuario(participantes[1], tiempoInicioSesion);
-				MensajeAServidor msj = new MensajeAServidor(null, salaPrivada, 9);
-				cliente.enviarMensaje(msj);
-			}
-		} else {
-			JOptionPane.showMessageDialog(this, "No hay mas usuarios en la sala", "No se puede crear sala privada",
-					JOptionPane.WARNING_MESSAGE);
-		}
-	}
-
-	public void abrirMenuCreacionPartida(String nombresUsuarios) {
-		btnIniciarPartida.setEnabled(false);
-		menu = new Menu(cliente, sala, this, nombresUsuarios);
-	}
-
-	public void menuCerrado() {
-		setEnabledBtnIniciarPartida(true);
-		menu = null;
-	}
-
-	public void actualizarMenu() {
-		if (menu != null) {
+	@Override
+	public void dispose() {
+		super.dispose();
+		if (menu != null)
 			menu.dispose();
-			iniciarPartida();
+
+			gui.rendirse();
 		}
 	}
 

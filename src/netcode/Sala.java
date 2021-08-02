@@ -6,22 +6,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class Sala implements Serializable {
 
 	private static final long serialVersionUID = 1238067019847995537L;
 	private String creador;
 	private String nombreSala;
 	private List<String> usuariosConectados;
-	private Map<String,Long> tiempoUsuarios;
-	private boolean privada;
+	private Map<String, Long> tiempoUsuarios;
+	private boolean partidaEnProceso=false;
 
-	public Sala(String nombreSala,boolean privada,String creador) {
-		this.creador=creador;
+	public Sala(String nombreSala, String creador) {
+		this.creador = creador;
 		this.nombreSala = nombreSala;
 		this.usuariosConectados = new ArrayList<String>();
-		this.tiempoUsuarios=new HashMap<String,Long>();
-		this.privada=privada;
+		this.tiempoUsuarios = new HashMap<String, Long>();
 	}
 
 	public String getNombreSala() {
@@ -32,7 +30,6 @@ public class Sala implements Serializable {
 		usuariosConectados.add(nombreCliente);
 		tiempoUsuarios.put(nombreCliente, tiempoInicioSesion);
 	}
-
 
 	public void eliminarUsuario(String nombreUsuario) {
 		usuariosConectados.remove(nombreUsuario);
@@ -47,8 +44,6 @@ public class Sala implements Serializable {
 	public String toString() {
 		return "Sala [nombreSala=" + nombreSala + ", usuariosConectados=" + usuariosConectados + "]";
 	}
-
-
 
 	@Override
 	public int hashCode() {
@@ -78,14 +73,20 @@ public class Sala implements Serializable {
 	public List<String> getUsuariosConectados() {
 		return usuariosConectados;
 	}
-	
+
 	public Map<String, Long> getTiempoUsuarios() {
 		return tiempoUsuarios;
 	}
-	public boolean isPrivada() {
-		return privada;
-	}
+
 	public String getCreador() {
 		return creador;
+	}
+	
+	
+	public void setPartidaEnProceso(boolean partidaEnProceso) {
+		this.partidaEnProceso=partidaEnProceso;
+	}
+	public boolean getPartidaEnProceso() {
+		return partidaEnProceso;
 	}
 }

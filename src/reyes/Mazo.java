@@ -70,7 +70,11 @@ public class Mazo implements Serializable {
 	public void quitarPrimerasNCartas(int n, List<Carta> cartasDevueltas) {
 		cartasDevueltas.clear();
 		for (int i = 0; i < n; i++) {
-			cartasDevueltas.add(this.cartas.remove(0));
+			if(cartas.size()>0) {
+				cartasDevueltas.add(this.cartas.remove(0));				
+			}else {
+				System.out.println("No hay mas cartas");
+			}
 		}
 		cartasDevueltas.sort(Carta::compareTo);
 

@@ -3,36 +3,30 @@ package reyes;
 import java.io.IOException;
 import java.util.List;
 
-import SwingApp.VentanaJueguito;
-import netcode.HiloCliente;
+import SwingApp.GUI;
 
-public class Jugador extends Usuario {
+public class Jugador {
 
-	private static final long serialVersionUID = -5342621303315896626L;
 	private String nombre;
 	protected Tablero tablero;
 	protected boolean reinoCompletamenteOcupado = true;
 
 	public Jugador(String nombre, int tamTablero) {
-		super(nombre, "");
 		this.nombre = nombre;
 		this.tablero = new Tablero(tamTablero);
 	}
 
-	public Jugador(Usuario user) {
-		super(user);
-		this.nombre = user.getNombreUsuario();
-	}
-
-	public Jugador(String nombre, String contrasenia) {
-		super(nombre, contrasenia);
+	public Jugador(String nombre, int tamTablero, int idJugador) {
+		this.nombre = nombre;
+		this.tablero = new Tablero(tamTablero);
+		setIdCastilloCentro(idJugador + 1);
 	}
 
 	public String getNombre() {
 		return nombre;
 	}
 
-	public boolean insertaEnTablero(Carta carta, VentanaJueguito ventana) {
+	public boolean insertaEnTablero(Carta carta, GUI ventana) {
 		if (!tablero.esPosibleInsertarEnTodoElTablero(carta)) {
 			reinoCompletamenteOcupado = false;
 			ventana.mostrarError("La carta no se puede colocar en ninguna posicion, se descarta.");
@@ -45,7 +39,25 @@ public class Jugador extends Usuario {
 		return true;
 	}
 
-	public int eligeCarta(List<Carta> cartasAElegir, VentanaJueguito entrada,Partida partida) throws IOException {
+	public String[] insertaEnTableroOnline(Carta carta, GUI ventana) {
+		String[] insercion = new String[3];
+		if (!tablero.esPosibleInsertarEnTodoElTablero(carta)) {
+			reinoCompletamenteOcupado = false;
+			ventana.mostrarError("La carta no se puede colocar en ninguna posicion, se descarta.");
+			insercion[0] = "N";
+			return insercion;
+		}
+		int[] posicion = new int[2];
+		boolean pudoInsertar;
+		do {
+			posicion = ventana.obtenerInputCoordenadas(carta);
+			insercion = tablero.ponerCartaOnline(carta, posicion[0], posicion[1], true, ventana);
+			pudoInsertar = !(insercion == null);
+		} while (!pudoInsertar);
+		return insercion;
+	}
+
+	public int eligeCarta(List<Carta> cartasAElegir, GUI entrada, Partida partida) throws IOException {
 		int cartaElegida = 0;
 		do {
 			cartaElegida = entrada.leerCartaElegida();
@@ -57,7 +69,24 @@ public class Jugador extends Usuario {
 				}
 
 			}
-		} while (!partida.isRendido() && cartasAElegir.get(cartaElegida) == null);
+		} while (cartasAElegir.get(cartaElegida) == null);
+
+		return cartaElegida;
+	}
+
+	public int eligeCarta(List<Carta> cartasAElegir, GUI entrada) {
+		int cartaElegida = 0;
+		do {
+			cartaElegida = entrada.leerCartaElegida();
+			for (int i = 0; i < cartasAElegir.size(); i++) {
+				Carta c = cartasAElegir.get(i);
+				if (c != null) {
+					if (c.getId() == cartaElegida)
+						cartaElegida = i;
+				}
+
+			}
+		} while (cartaElegida != Integer.MIN_VALUE && cartasAElegir.get(cartaElegida) == null);
 
 		return cartaElegida;
 	}
@@ -78,15 +107,16 @@ public class Jugador extends Usuario {
 		return reinoCompletamenteOcupado;
 	}
 
+	public void setReinoCompletamenteOcupado(boolean reinoCompletamenteOcupado) {
+		this.reinoCompletamenteOcupado = reinoCompletamenteOcupado;
+	}
+
 	public void setIdCastilloCentro(int i) {
 		tablero.setIdCastilloCentro(i);
 	}
 
-	public void crearPaquete(Partida partida,HiloCliente hiloCliente,int numeroElegido, int coordenadaX, int coordenadaY, boolean pudoInsertar, int rotacion) {
-		String insercion = pudoInsertar ? "S" : "N";
-		partida.setPaquete(numeroElegido + "," + coordenadaX + "," + coordenadaY + "," + this.nombre + "," + insercion
-				+ "," + rotacion);
-		hiloCliente.getMtxPaquetePartida().countDown(); // aviso a mi hilo que tiene preparado un paquete
+	public int getTamanioTablero() {
+		return tablero.getTamanio();
 	}
 
 }

@@ -4,24 +4,26 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Servidor {
+	public static final int PUERTO = 50000;
+	public static final String IP = "localhost";
 	private ServerSocket server;
-	private List<Socket> sockets;
-	private List<Sala> salas;
 
-	private Map<String, Sala> mapaSalas;
-	private Map<Socket, ObjectOutputStream> mapaSocketsObjectOuput;
+	// Nombre de usuario --> socket
 	private Map<String, Socket> mapaNombreSocket;
+	// Socket --> ObjectOutputStream
+	private Map<Socket, ObjectOutputStream> mapaSocketsObjectOuput;
+	// Nombre de sala --> Sala
+	private Map<String, Sala> mapaSalas;
+	// Nombre de partida --> partida
+	private Map<String, PartidaEnServidor> mapaPartidas;
 
 	public Servidor(int puerto) {
-		this.sockets = new ArrayList<Socket>();
-		this.salas = new ArrayList<Sala>();
 		this.mapaSalas = new HashMap<String, Sala>();
+		this.mapaPartidas = new HashMap<String, PartidaEnServidor>();
 		this.mapaNombreSocket = new HashMap<String, Socket>();
 		this.mapaSocketsObjectOuput = new HashMap<Socket, ObjectOutputStream>();
 
@@ -38,8 +40,7 @@ public class Servidor {
 			while (true) {
 				Socket socket = server.accept();
 				System.out.println("Cliente conectado");
-				sockets.add(socket);
-				new HiloServidor(socket, sockets, mapaSocketsObjectOuput, mapaNombreSocket, salas, mapaSalas).start();
+				new HiloServidor(socket, mapaSocketsObjectOuput, mapaNombreSocket, mapaSalas, mapaPartidas).start();
 			}
 
 		} catch (IOException e) {
@@ -51,7 +52,7 @@ public class Servidor {
 
 	public static void main(String[] args) {
 		System.out.println("Servidor ejecutandose");
-		new Servidor(40000).run();
+		new Servidor(Servidor.PUERTO).run();
 	}
 
 }

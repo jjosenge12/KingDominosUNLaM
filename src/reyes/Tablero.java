@@ -3,7 +3,7 @@ package reyes;
 import java.util.ArrayList;
 import java.util.List;
 import SwingApp.PanelInformacion;
-import SwingApp.VentanaJueguito;
+import SwingApp.GUI;
 
 public class Tablero {
 	protected Ficha[][] tablero;
@@ -50,7 +50,7 @@ public class Tablero {
 		}
 	}
 
-	public int puntajeTotal(boolean mostrarRegiones, VentanaJueguito ventana, int indice) {
+	public int puntajeTotal(GUI ventana, int indice) {
 		int acumPuntos = 0;
 		for (int i = fMin; i <= fMax; i++) {
 			for (int j = cMin; j <= cMax; j++) {
@@ -63,7 +63,7 @@ public class Tablero {
 		return acumPuntos;
 	}
 
-	private int contarPuntajeParcial(int fila, int columna, VentanaJueguito ventana, int indice) {
+	private int contarPuntajeParcial(int fila, int columna, GUI ventana, int indice) {
 		Ficha ficha = tablero[fila][columna];
 
 		if (ficha == null)
@@ -79,7 +79,7 @@ public class Tablero {
 		puntosYCoronas.add(0);
 		puntosYCoronas.add(0);
 
-		puntajeRecursivo(ficha.getTipo(), fila, columna, puntosYCoronas, ventana, indice);
+		puntajeRecursivo(ficha.getTipo(), fila, columna, puntosYCoronas, ventana);
 
 		Integer acumPuntos = puntosYCoronas.get(0);
 		Integer acumCoronas = puntosYCoronas.get(1);
@@ -91,7 +91,7 @@ public class Tablero {
 	}
 
 	private void puntajeRecursivo(String tipoRegion, int fila, int columna, List<Integer> puntosYCoronas,
-			VentanaJueguito ventana, int indice) {
+			GUI ventana) {
 
 		if (!(fila >= 0 && fila < tablero.length) || !(columna >= 0 && columna < tablero.length))
 			return;
@@ -111,17 +111,17 @@ public class Tablero {
 				puntosYCoronas.set(0, acumPuntos);
 				int cantCoronas = puntosYCoronas.get(1) + fichaActual.getCantCoronas();
 				puntosYCoronas.set(1, cantCoronas);
-				puntajeRecursivo(tipoRegion, fila + 1, columna, puntosYCoronas, ventana, indice);
-				puntajeRecursivo(tipoRegion, fila, columna + 1, puntosYCoronas, ventana, indice);
-				puntajeRecursivo(tipoRegion, fila - 1, columna, puntosYCoronas, ventana, indice);
-				puntajeRecursivo(tipoRegion, fila, columna - 1, puntosYCoronas, ventana, indice);
+				puntajeRecursivo(tipoRegion, fila + 1, columna, puntosYCoronas, ventana);
+				puntajeRecursivo(tipoRegion, fila, columna + 1, puntosYCoronas, ventana);
+				puntajeRecursivo(tipoRegion, fila - 1, columna, puntosYCoronas, ventana);
+				puntajeRecursivo(tipoRegion, fila, columna - 1, puntosYCoronas, ventana);
 			}
 		}
 		return;
 
 	}
 
-	public boolean ponerCarta(Carta carta, int columna, int fila, boolean mostrarMensaje, VentanaJueguito ventana) {
+	public boolean ponerCarta(Carta carta, int columna, int fila, boolean mostrarMensaje, GUI ventana) {
 		Ficha[] fichas = carta.getFichas();
 		carta.moverCarta(fila, columna);
 
@@ -141,11 +141,36 @@ public class Tablero {
 			return false;
 		}
 	}
+	public String[] ponerCartaOnline(Carta carta, int columna, int fila, boolean mostrarMensaje, GUI ventana) {
+		Ficha[] fichas = carta.getFichas();
+		carta.moverCarta(fila, columna);
+		String[] msjInsercion=new String[3];
+		if (esPosibleInsertar(carta, mostrarMensaje, ventana)) {
+
+			int f1f = fichas[0].getFila();
+			int f1c = fichas[0].getColumna();
+			int f2f = fichas[1].getFila();
+			int f2c = fichas[1].getColumna();
+			comprobarLimite(f1f, f1c, f2f, f2c, tamTablero,true);
+			tablero[f1f][f1c] = fichas[0];
+			tablero[f2f][f2c] = fichas[1];
+			cantTerrenoColocado++;
+//			msjInsercion="S,"+f1c+","+f1f+","+fichas[0].getRotacion();
+			msjInsercion[0]=""+f1c;
+			msjInsercion[1]=""+f1f;
+			msjInsercion[2]=""+fichas[0].getRotacion();
+			return msjInsercion;
+		} else {
+			carta.setDefault();
+			msjInsercion=null;
+			return msjInsercion;
+		}
+	}
 
 	/*
 	 * Sobrecarga del metodo para que reciba la ventana como argumento
 	 */
-	protected boolean esPosibleInsertar(Carta carta, boolean mostrarMensaje, VentanaJueguito ventana) {
+	protected boolean esPosibleInsertar(Carta carta, boolean mostrarMensaje, GUI ventana) {
 		Ficha[] fichas = carta.getFichas();
 		int f1f = fichas[0].getFila();
 		int f1c = fichas[0].getColumna();

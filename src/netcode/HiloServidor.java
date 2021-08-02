@@ -5,24 +5,25 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import reyes.Carta;
+
 public class HiloServidor extends Thread {
 	private Socket socket;
-	private List<Socket> sockets;
-	private Map<Socket, ObjectOutputStream> mapaSocketsObjectOuput;
-	private List<Sala> salas;
-	private Map<String, Socket> mapaNombreSocket;
 	private Map<String, Sala> mapaSalas;
+	private Map<String, PartidaEnServidor> mapaPartidas;
+	private Map<String, Socket> mapaNombreSocket;
+	private Map<Socket, ObjectOutputStream> mapaSocketsObjectOuput;
 
-	public HiloServidor(Socket socket, List<Socket> sockets, Map<Socket, ObjectOutputStream> mapa,
-			Map<String, Socket> mapaNombreSocket, List<Sala> salas, Map<String, Sala> mapaSalas) {
+	public HiloServidor(Socket socket, Map<Socket, ObjectOutputStream> mapa, Map<String, Socket> mapaNombreSocket,
+			Map<String, Sala> mapaSalas, Map<String, PartidaEnServidor> mapaPartidas) {
 		this.socket = socket;
-		this.sockets = sockets;
-		this.salas = salas;
 		this.mapaNombreSocket = mapaNombreSocket;
+		this.mapaPartidas = mapaPartidas;
 		this.mapaSalas = mapaSalas;
 		this.mapaSocketsObjectOuput = mapa;
 	}
@@ -47,7 +48,6 @@ public class HiloServidor extends Thread {
 				salida.reset();
 				entrada.close();
 				salida.close();
-				sockets.remove(socket);
 				socket.close();
 				System.out.println("Cliente desconectado por nombre de usuario existente");
 				return;
@@ -73,7 +73,8 @@ public class HiloServidor extends Thread {
 			actualizarSalas();
 			int tipoMensaje = 1;
 
-			while (tipoMensaje != 0) {// El cliente envia un 0 para desconectarse
+			// El cliente envia un 0 para desconectarse
+			while (tipoMensaje != 0) {
 				mensajeAServidor = (MensajeAServidor) entrada.readObject();
 				tipoMensaje = mensajeAServidor.getTipo();
 
@@ -91,22 +92,13 @@ public class HiloServidor extends Thread {
 					salirDeSala(mensajeAServidor);
 					break;
 				case 6:// El cliente envia un mensaje a una sala por un mensaje tipo 6
-					recibirMensaje(mensajeAServidor);
+					recibirMensajeSala(mensajeAServidor);
 					break;
 				case 7:// El cliente envia un mensaje a una sala por un mensaje tipo 6
 					recibirPedidoTiemposSesion(mensajeAServidor);
 					break;
 				case 8:// Se envia al cliente la lista de usuarios en la sala
 					enviarListaUsuariosSala(mensajeAServidor);
-					break;
-				case 9:// se crea la sala privada y se une a los usuarios
-					crearSalaPrivada(mensajeAServidor);
-					break;
-				case 10:// cuando un usuario sale de la sala privada, se quita al otro.
-					salirSalaPrivada(mensajeAServidor);
-					break;
-				case 11:// recibo estado inicial de una partida
-					iniciarJuegoClientes(mensajeAServidor);
 					break;
 				case 12:// recibo un paquete con la carta elegida y posicion
 					procesarTurnoJugador(mensajeAServidor);
@@ -117,6 +109,9 @@ public class HiloServidor extends Thread {
 				case 14:// Se envia al cliente la lista de usuarios en la sala
 					enviarListaUsuariosSala(mensajeAServidor);
 					break;
+				case 15:// Se recibe la rendicion del usuario
+					recibirRendicionDelUsuario(mensajeAServidor);
+					break;
 				}
 
 				if (tipoMensaje != 0) {
@@ -125,103 +120,30 @@ public class HiloServidor extends Thread {
 
 			}
 		} catch (IOException | ClassNotFoundException e) {
+
 			System.out.println("Error en lectura de mensaje en HiloServidor");
-			e.printStackTrace();
-		}
-		try {// Desconexion del cliente del servidor
-			mensajeACliente = new MensajeACliente(null, null, -1);
-			salida.writeObject(mensajeACliente);
-			entrada.close();
-			salida.close();
-			mapaSocketsObjectOuput.remove(socket);
-			mapaNombreSocket.remove(mensajeAServidor.getTexto());
-			sockets.remove(socket);
-			socket.close();
-			System.out.println("Cliente desconectado normalmente");
-		} catch (IOException e) {
-			System.out.println("Error desconectando cliente");
-			e.printStackTrace();
-		}
 
-	}
+			// Si hubo una falla en la lectura del mensaje, se quita al usuario de todas las
+			// salas
+			quitarUsuarioDeTodasLasSalas(socket);
 
-	private void crearPartida(MensajeAServidor mensajeServidor) {
-		Sala sala = mensajeServidor.getSala();
-		Sala salaActual = mapaSalas.get(sala.getNombreSala());
-
-		MensajeACliente msj = new MensajeACliente(mensajeServidor.getTexto(), 11, salaActual);
-		// mensaje a dueño de sala de que inicie la partida
-		enviarMensajeAUsuario(msj, salaActual.getUsuariosConectados().get(0));
-
-	}
-
-	private void procesarTurnoJugador(MensajeAServidor mensajeAServidor) {
-		String nombreSala = mensajeAServidor.getSala().getNombreSala();
-		Sala s = null;
-		for (Sala sala : salas) {
-			if (sala.getNombreSala().equals(nombreSala)) {
-				s = sala;
-				break;
-			}
-		}
-		if (s == null) {
-			System.err.println("SALA INEXSITENTE: " + nombreSala);
-		}
-		System.out.println("Sala: " + s);
-		List<String> jugadores = s.getUsuariosConectados();
-
-		String[] datosPaquete = mensajeAServidor.getTexto().split(",");
-		boolean seRindioUsuario = datosPaquete[4].contains("Rendir");
-		String emisor = datosPaquete[3];
-//		System.out.println("Recibi mensaje del jugador " + emisor);
-//		System.out.println("Mensaje crudo: " + mensajeAServidor.getTexto());
-		for (String jugador : jugadores) {
-			System.out.println(jugador);
-			if (!jugador.equals(emisor)) {
-				MensajeACliente msj = new MensajeACliente(mensajeAServidor.getTexto(), 13, s);
-				enviarMensajeAUsuario(msj, jugador);
-//				System.out.println("Lo replique a: " + jugador);
-			}
-		}
-		if (seRindioUsuario) {
-			mensajeAServidor.setTexto(emisor);
-			salirDeSala(mensajeAServidor);
-		}
-
-	}
-
-	private void iniciarJuegoClientes(MensajeAServidor mensajeAServidor) {
-		// 11: Nos pidieron avisar a todos los usuarios que el host inicio la partida
-		// Tenemos que especificar los turnos iniciales y el mazo.
-		Sala salaActual = mensajeAServidor.getSala();
-		List<String> jugadoresEnSala = salaActual.getUsuariosConectados();
-		for (int i = 1; i < jugadoresEnSala.size(); i++) {
-			// 12: Le decimos a los usuarios que inicien su UI, y le pasamos el estado de la
-			// partida
-			MensajeACliente msj = new MensajeACliente(getName(), 12, salaActual, mensajeAServidor.getEstado());
-			System.out.println("Servdor: Usuario " + jugadoresEnSala.get(i) + " inicia!");
-			enviarMensajeAUsuario(msj, jugadoresEnSala.get(i));
+		} finally {
 			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
+				// Desconexion del cliente del servidor
+				if (!socket.isClosed()) {
+					entrada.close();
+					salida.close();
+					socket.close();
+				}
+				mapaSocketsObjectOuput.remove(socket);
+				mapaNombreSocket.remove(mensajeAServidor.getTexto());
+				System.out.println("Cliente desconectado normalmente");
+			} catch (IOException e) {
+				System.out.println("Error desconectando cliente");
 				e.printStackTrace();
 			}
 		}
-	}
 
-	private void salirSalaPrivada(MensajeAServidor mensaje) {
-		String nombreSala = mensaje.getSala().getNombreSala();
-		Sala sala = mapaSalas.get(nombreSala);
-		if (sala != null) {
-			mapaSalas.remove(nombreSala);
-			List<String> clientes = sala.getUsuariosConectados();
-			// mensaje tipo 4:saca al usuario de la sala
-			MensajeACliente msj = new MensajeACliente(null, 4, sala);
-			for (String usuario : clientes) {
-				enviarMensajeAUsuario(msj, usuario);
-			}
-
-		}
 	}
 
 	private void enviarMensajeAUsuario(MensajeACliente msj, String usuario) {
@@ -234,26 +156,180 @@ public class HiloServidor extends Thread {
 				salida.reset();
 			}
 		} catch (IOException e) {
-			System.out.println("Error en envio de mensaje a usuario");
+			System.out.println("Error en envio de mensaje a usuario:" + usuario);
 			e.printStackTrace();
 		}
 	}
 
-	private void crearSalaPrivada(MensajeAServidor mensaje) {
-		Sala sala = mensaje.getSala();
-		mapaSalas.put(sala.getNombreSala(), sala);
+	private void enviarMensajeATodosLosSockets(MensajeACliente msj) {
+		ObjectOutputStream salida;
 
-		// mensaje tipo 8:crea la sala privada
-		List<String> usuarios = sala.getUsuariosConectados();
-		MensajeACliente msj = new MensajeACliente(null, 8, sala);
-		for (String usuario : usuarios) {
-			enviarMensajeAUsuario(msj, usuario);
+		try {
+
+			for (Map.Entry<Socket, ObjectOutputStream> entry : mapaSocketsObjectOuput.entrySet()) {
+				ObjectOutputStream objectOutputStream = entry.getValue();
+				salida = objectOutputStream;
+				salida.writeObject(msj);
+				salida.flush();
+				salida.reset();
+			}
+
+		} catch (IOException e) {
+			System.out.println("Error envio mensaje actualizando sala");
+			e.printStackTrace();
 		}
 
 	}
 
+	private void actualizarSalas() {
+		List<Sala> listaSalas = new ArrayList<Sala>();
+
+		for (Map.Entry<String, Sala> entry : mapaSalas.entrySet()) {
+			Sala sala = entry.getValue();
+			listaSalas.add(sala);
+		}
+
+		// mensaje tipo 1: actualizacion de salas
+		MensajeACliente msj = new MensajeACliente(null, listaSalas, 1);
+		enviarMensajeATodosLosSockets(msj);
+
+	}
+
+	private void agregarSala(MensajeAServidor mensaje) {
+		if (!mapaSalas.containsKey(mensaje.getNombreSala())) {
+			// Indice 0: nombre sala, Indice 1:nombre creador de la sala.
+			String[] cSala = mensaje.getNombreSala().split(",");
+			Sala sala = new Sala(cSala[0], cSala[1]);
+			mapaSalas.put(sala.getNombreSala(), sala);
+		} else {
+			MensajeACliente msj = new MensajeACliente(null, null, 12);
+			enviarMensajeAUsuario(msj, mensaje.getTexto());
+		}
+	}
+
+	private void quitarSala(MensajeAServidor mensaje) {
+		Sala sala = mapaSalas.get(mensaje.getNombreSala());
+		mapaSalas.remove(sala.getNombreSala());
+	}
+
+	private void unirseASala(MensajeAServidor mensajeServidor) {
+		Sala sala = mapaSalas.get(mensajeServidor.getNombreSala());
+		MensajeACliente msj;
+		boolean partidaEnProceso = sala.getPartidaEnProceso();
+
+		if (sala.getCantUsuarios() < 4 && !partidaEnProceso) {
+
+			long tiempoInicioSesion = System.currentTimeMillis();
+			sala.agregarUsuario(mensajeServidor.getTexto(), tiempoInicioSesion);
+			// mensaje tipo 2: une al usuario a la sala
+			msj = new MensajeACliente(null, 2, sala.getNombreSala());
+			enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
+			String notificacion = mensajeServidor.getTexto() + " se ha unido a la sala";
+			MensajeAServidor msjServidor = new MensajeAServidor(notificacion, sala.getNombreSala(), 0);
+			recibirMensajeSala(msjServidor);
+			String creador = sala.getCreador();
+			if (sala.getCantUsuarios() > 0 && sala.getUsuariosConectados().contains(creador)) {
+				// Avisa al creador, si entro un usuario a la sala, esto sirve para actualizar
+				// el menu en caso de que ya este abierto cuando entre otro jugador
+				msj.setTipo(17);
+				enviarMensajeAUsuario(msj, creador);
+			}
+
+		} else {
+
+			int tipoMensaje = partidaEnProceso ? 20 : 15;
+
+			msj = new MensajeACliente(null, tipoMensaje, null);
+			enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
+		}
+
+	}
+
+	private void salirDeSala(MensajeAServidor mensajeServidor) {
+		Sala sala = mapaSalas.get(mensajeServidor.getNombreSala());
+		sala.eliminarUsuario(mensajeServidor.getTexto());
+
+		// mensaje tipo 3: saca al usuario de la sala
+		MensajeACliente msj = new MensajeACliente(null, 3, sala.getNombreSala());
+		enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
+
+		String notificacion = mensajeServidor.getTexto() + " se ha desconectado de la sala";
+		MensajeAServidor msjServidor = new MensajeAServidor(notificacion, sala.getNombreSala(), 0);
+		recibirMensajeSala(msjServidor);
+
+		if (sala.getCantUsuarios() > 0 && !sala.getPartidaEnProceso()) {
+			String creador = sala.getCreador();
+			msj.setTipo(17);
+			enviarMensajeAUsuario(msj, creador);
+		}
+	}
+
+	private void quitarUsuarioDeTodasLasSalas(Socket socketAEliminar) {
+		String nombreAEliminar = "";
+		for (Map.Entry<String, Socket> entry : mapaNombreSocket.entrySet()) {
+
+			String nombre = entry.getKey();
+
+			if (entry.getValue() == socketAEliminar) {
+				nombreAEliminar = nombre;
+			}
+		}
+
+		if (!nombreAEliminar.equals("")) {
+			for (Map.Entry<String, Sala> entry : mapaSalas.entrySet()) {
+
+				Sala sala = entry.getValue();
+				boolean contieneUsuario = sala.getUsuariosConectados().contains(nombreAEliminar);
+
+				if (contieneUsuario) {
+
+					MensajeAServidor notificacionDesconexion = new MensajeAServidor(
+							"Servidor: Se ha interrumpido la conexion con el usuario:" + nombreAEliminar,
+							sala.getNombreSala(), 0);
+
+					sala.eliminarUsuario(nombreAEliminar);
+					recibirMensajeSala(notificacionDesconexion);
+
+					if (sala.getPartidaEnProceso()) {
+
+						PartidaEnServidor partida = mapaPartidas.get(sala.getNombreSala());
+						int id = partida.getIDUsuario(nombreAEliminar);
+
+						if (partida.getTurnos().get(0) == id) {
+							enviarRendicion(id, partida);
+						} else {
+							partida.agregarAListaRendidos(id);
+						}
+					}
+				}
+			}
+		}
+	}
+	@SuppressWarnings("deprecation")
+	private void recibirMensajeSala(MensajeAServidor mensajeServidor) {
+		// El servidor recibe el mensaje y lo envia a todos los usuarios de la sala
+		Sala sala = mapaSalas.get(mensajeServidor.getNombreSala());
+
+		// Se concatena la hora con el mensaje enviado por el cliente.
+		Date tiempo = new Date();
+		int horas = tiempo.getHours();
+		String txtHoras = horas < 10 ? "0" + horas : "" + horas;
+		int minutos = tiempo.getMinutes();
+		String txtMinutos = minutos < 10 ? "0" + minutos : "" + minutos;
+		String hora = "(" + txtHoras + ":" + txtMinutos + ")";
+		String mensaje = hora + mensajeServidor.getTexto();
+
+		// mensaje tipo 4: envia mensaje a la sala.
+		MensajeACliente msjCliente = new MensajeACliente(mensaje, 4, sala.getNombreSala());
+		List<String> usuariosEnSala = sala.getUsuariosConectados();
+
+		for (String usuario : usuariosEnSala) {
+			enviarMensajeAUsuario(msjCliente, usuario);
+		}
+	}
+
 	private void enviarListaUsuariosSala(MensajeAServidor mensaje) {
-		String sala = mensaje.getSala().getNombreSala();
+		String sala = mensaje.getNombreSala();
 		Sala salaActual = mapaSalas.get(sala);
 		List<String> usuarios = salaActual.getUsuariosConectados();
 		String cad = "";
@@ -261,19 +337,19 @@ public class HiloServidor extends Thread {
 			cad += user + "\n";
 		}
 		int tipo = mensaje.getTipo() == 8 ? 7 : 16;
-		// mensaje tipo 7:envia la lista de usuarios en la sala
-		// mensaje tipo 16:envia la lista de usuarios en la sala para menu iniciar
-		// partida
-		MensajeACliente msj = new MensajeACliente(cad, tipo, salaActual);
+		/*
+		 * mensaje tipo 7:envia la lista de usuarios en la sala mensaje tipo 16:envia la
+		 * lista de usuarios en la sala para menu iniciar partida
+		 */
+		MensajeACliente msj = new MensajeACliente(cad, tipo, salaActual.getNombreSala());
 		enviarMensajeAUsuario(msj, mensaje.getTexto());
 	}
 
 	private void recibirPedidoTiemposSesion(MensajeAServidor mensaje) {
-		String sala = mensaje.getSala().getNombreSala();
-		Sala salaActual = mapaSalas.get(sala);
+		Sala sala = mapaSalas.get(mensaje.getNombreSala());
 
-		List<String> usuarios = salaActual.getUsuariosConectados();
-		Map<String, Long> tiempos = salaActual.getTiempoUsuarios();
+		List<String> usuarios = sala.getUsuariosConectados();
+		Map<String, Long> tiempos = sala.getTiempoUsuarios();
 
 		String cad = "";
 		Long tiempoActual = System.currentTimeMillis();
@@ -285,125 +361,168 @@ public class HiloServidor extends Thread {
 			String txtHoras = horas < 10 ? ("0" + horas) : horas + "";
 			String txtMinutos = minutos < 10 ? ("0" + minutos + "") : minutos + "";
 			String txtSegundos = segundos < 10 ? ("0" + segundos + "") : segundos + "";
-			cad += usuario + "➡" + txtHoras + ":" + txtMinutos + ":" + txtSegundos + "\n";
-
+			cad += usuario + "->" + txtHoras + ":" + txtMinutos + ":" + txtSegundos + "\n";
 		}
 
-		// mensaje tipo 6:envia los tiempos de conexion
-		MensajeACliente msjCliente = new MensajeACliente(cad, 6, salaActual);
+		// mensaje tipo 5:envia los tiempos de conexion
+		MensajeACliente msjCliente = new MensajeACliente(cad, 5, sala.getNombreSala());
 		enviarMensajeAUsuario(msjCliente, mensaje.getTexto());
 	}
 
-	@SuppressWarnings("deprecation")
-	private void recibirMensaje(MensajeAServidor mensajeServidor) {
-		String nombreSala = mensajeServidor.getSala().getNombreSala();
-		Sala salaActual = mapaSalas.get(nombreSala);
+	private void crearPartida(MensajeAServidor mensajeServidor) {
+		String nombreSala = mensajeServidor.getNombreSala();
+		Sala sala = mapaSalas.get(nombreSala);
+		String stringConfiguracion = mensajeServidor.getTexto();
+		String[] configuracion = stringConfiguracion.split(",");
+		String tiposJugadores = configuracion[0];
+		String[] nombresJugadores = configuracion[1].split("\\|");
+		List<Character> jugadores = new ArrayList<Character>();
 
-		// Se concatena la hora con el mensaje enviado por el cliente.
-		Date tiempo = new Date();
-		int horas = tiempo.getHours();
-		String txtHoras = horas < 10 ? "0" + horas : "" + horas;
-		int minutos = tiempo.getMinutes();
-		String txtMinutos = minutos < 10 ? "0" + minutos : "" + minutos;
-		String hora = "(" + txtHoras + ":" + txtMinutos + ")";
-		String mensaje = hora + mensajeServidor.getTexto();
-
-		// mensaje tipo 5: envia mensaje a la sala.
-		MensajeACliente msjCliente = new MensajeACliente(mensaje, 5, salaActual);
-		List<String> usuariosEnSala = new ArrayList<String>();
-		usuariosEnSala = salaActual.getUsuariosConectados();
-
-		for (String usuario : usuariosEnSala) {
-			enviarMensajeAUsuario(msjCliente, usuario);
+		for (int i = 0; i < tiposJugadores.length(); i++) {
+			char tipoJugador = tiposJugadores.charAt(i);
+			jugadores.add(tipoJugador);
 		}
+		String nombreMazo = configuracion[3];
+		String modoDeJuego = configuracion[4];
+		String variante = nombreMazo + "|" + modoDeJuego;
+
+		List<String> listaNombresJugadores = Arrays.asList(nombresJugadores);
+		PartidaEnServidor partida = new PartidaEnServidor(nombreSala, jugadores, listaNombresJugadores, variante);
+		mapaPartidas.put(nombreSala, partida);
+
+		// Se envia la configuracion de la partida a todos los usuarios para que inicien
+		// su interfaz grafica
+		List<String> usuarios = sala.getUsuariosConectados();
+		MensajeACliente msj = new MensajeACliente("", 12, sala.getNombreSala());
+
+		sala.setPartidaEnProceso(true);
+		for (int i = 0; i < usuarios.size(); i++) {
+			String usuario = usuarios.get(i);
+			msj.setTexto(stringConfiguracion + "," + i);
+			enviarMensajeAUsuario(msj, usuario);
+		}
+
+		// Se pone en marcha la partida jugandose el primer turno
+		jugarTurnoSiguiente(partida);
+
 	}
 
-	private void salirDeSala(MensajeAServidor mensajeServidor) {
-		Sala sala = mensajeServidor.getSala();
-		Sala salaActual = mapaSalas.get(sala.getNombreSala());
-		salaActual.eliminarUsuario(mensajeServidor.getTexto());
+	private void jugarTurnoSiguiente(PartidaEnServidor partida) {
+		Sala sala = mapaSalas.get(partida.getNombreSala());
+		List<String> usuariosEnSala = sala.getUsuariosConectados();
 
-		// mensaje tipo 4: saca al usuario de la sala
-		MensajeACliente msj = new MensajeACliente(null, 4, salaActual);
-		enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
+		// Si no hay usuarios en la sala finaliza la partida
 
-		String notificacion = mensajeServidor.getTexto() + " se ha desconectado de la sala";
-		MensajeAServidor msjServidor = new MensajeAServidor(notificacion, salaActual, 0);
-		recibirMensaje(msjServidor);
+		if (usuariosEnSala.size() == 0) {
+
+			System.out.println("Partida finalizada por salida de usuarios");
+			sala.setPartidaEnProceso(false);
+			return;
+		}
+
+		// Si cartas es igual a null, no hay mas cartas en el mazo
+		List<Carta> cartas = partida.quitar4CartasDelMazo();
+		if (cartas == null) {
+			// Se avisa a todos los usuarios que termino la partida
+			MensajeACliente msjACliente = new MensajeACliente("", 18, sala.getNombreSala());
+
+			for (String usuario : usuariosEnSala) {
+				enviarMensajeAUsuario(msjACliente, usuario);
+			}
+
+			// Si se juega el modo dinastia se reinician los atributos de la partida
+			int partidasRestantes = partida.getPartidasRestantes();
+
+			if (partidasRestantes > 0) {
+				partida.inicializarAtributos();
+				cartas = partida.quitar4CartasDelMazo();
+			} else {
+				sala.setPartidaEnProceso(false);
+				System.out.println("Partida finalizada correctamente");
+				return;
+			}
+		}
+
+		List<Integer> turnos = partida.getTurnos();
+		int turnoActual = turnos.get(0);
+		List<Character> tipoJugadores = partida.getTipoJugadores();
+		Character tipoJugadorActual = tipoJugadores.get(turnoActual);
+
+		// Si es un jugador real y no un bot
+		if (tipoJugadorActual == 'J') {
+
+			// Si en la lista de rendidos esta el id actual, entonces se envia la rendicion
+			if (partida.isJugadorRendido(turnoActual)) {
+				enviarRendicion(turnoActual, partida);
+			} else {
+				// Se avisa a todos los usuarios que es el turno del jugador X
+				MensajePartidaEnJuego msjPartida = new MensajePartidaEnJuego(turnoActual, cartas);
+				MensajeACliente msjTurno = new MensajeACliente(14, msjPartida, sala.getNombreSala());
+
+				for (String usuario : usuariosEnSala) {
+					enviarMensajeAUsuario(msjTurno, usuario);
+				}
+			}
+		} else {
+			// Si es un bot, el bot en PartidaEnServidor realiza la jugada y se procesa el
+			// turno para enviarse a todos los usuarios de la sala
+			MensajeAServidor msjAServidor = partida.juegaBot(turnoActual, cartas);
+			procesarTurnoJugador(msjAServidor);
+		}
+
+	}
+
+	private void procesarTurnoJugador(MensajeAServidor mensajeAServidor) {
+		// Se recibe la jugada y se envia a todos los usuarios de la sala
+		PartidaEnServidor partida = mapaPartidas.get(mensajeAServidor.getNombreSala());
+		MensajePartidaEnJuego msjPartidaEnJuego = mensajeAServidor.getMsjPartidaEnJuego();
+		int numCartaElegida = msjPartidaEnJuego.getNumCartaElegida();
+		int numJugador = msjPartidaEnJuego.getIdJugador();
+		Sala sala = mapaSalas.get(mensajeAServidor.getNombreSala());
+		List<String> usuariosConectados = sala.getUsuariosConectados();
+		MensajeACliente msjACliente = new MensajeACliente(13, msjPartidaEnJuego, sala.getNombreSala());
+
+		for (String usuario : usuariosConectados) {
+			enviarMensajeAUsuario(msjACliente, usuario);
+		}
+
+		partida.jugadorIElijeCartaJ(numJugador, numCartaElegida);
+		jugarTurnoSiguiente(partida);
+	}
+
+	private void recibirRendicionDelUsuario(MensajeAServidor msj) {
+		String nombreCliente = msj.getTexto();
+		// Se saca al cliente de la sala para que no reciba posteriores jugadas.
+		MensajeAServidor msjAServidor = new MensajeAServidor(nombreCliente, msj.getNombreSala(), 5);
+		salirDeSala(msjAServidor);
+
+		PartidaEnServidor partida = mapaPartidas.get(msj.getNombreSala());
+		int idEnPartida = partida.getIDUsuario(nombreCliente);
+
 		/*
-		if (salaActual.getCantUsuarios() > 0) {
-			String creador = salaActual.getCreador();
-			msj.setTipo(17);
-			enviarMensajeAUsuario(msj, creador);
-		}*/
-	}
-
-	private void unirseASala(MensajeAServidor mensajeServidor) {
-		Sala sala = mensajeServidor.getSala();
-		Sala salaActual = mapaSalas.get(sala.getNombreSala());
-		MensajeACliente msj;
-
-		if (salaActual.getCantUsuarios() < 4) {
-			long tiempoInicioSesion = System.currentTimeMillis();
-			salaActual.agregarUsuario(mensajeServidor.getTexto(), tiempoInicioSesion);
-			// mensaje tipo 3: une al usuario a la sala
-			msj = new MensajeACliente(null, 3, salaActual);
-			enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
-			String notificacion = mensajeServidor.getTexto() + " se ha unido a la sala";
-			MensajeAServidor msjServidor = new MensajeAServidor(notificacion, salaActual, 0);
-			recibirMensaje(msjServidor);
-			if (salaActual.getCantUsuarios() > 0) {
-				String creador = salaActual.getCreador();
-				msj.setTipo(17);
-				enviarMensajeAUsuario(msj, creador);
-			}
-
+		 * Si el jugador se rindio en su turno entonces la rendicion se envia en ese
+		 * instante, de caso contrario la rendicion se guarda en una lista y sera
+		 * enviada cuando sea el turno correspondiente
+		 */
+		if (partida.getTurnos().get(0) == idEnPartida) {
+			enviarRendicion(idEnPartida, partida);
 		} else {
-			msj = new MensajeACliente(null, 15, null);
-			enviarMensajeAUsuario(msj, mensajeServidor.getTexto());
+			partida.agregarAListaRendidos(idEnPartida);
 		}
 
 	}
 
-	private void quitarSala(MensajeAServidor mensaje) {
-		Sala sala = mensaje.getSala();
-		salas.remove(sala);
-		mapaSalas.remove(sala.getNombreSala());
-	}
+	private void enviarRendicion(int idEnPartida, PartidaEnServidor partida) {
+		// Actualizo los ids correspondientes en partida y envio la rendicion a todos
+		// los usuarios de la sala
+		partida.actualizarIds(idEnPartida);
+		Sala sala = mapaSalas.get(partida.getNombreSala());
+		List<String> usuariosConectados = sala.getUsuariosConectados();
+		MensajeACliente msjACliente = new MensajeACliente("" + idEnPartida, 19, sala.getNombreSala());
 
-	private void agregarSala(MensajeAServidor mensaje) {
-		Sala sala = mensaje.getSala();
-		if (!mapaSalas.containsKey(sala.getNombreSala())) {
-			salas.add(sala);
-			mapaSalas.put(sala.getNombreSala(), sala);
-		} else {
-			MensajeACliente msj = new MensajeACliente(null, null, 12);
-			enviarMensajeAUsuario(msj, mensaje.getTexto());
+		for (String usuario : usuariosConectados) {
+			enviarMensajeAUsuario(msjACliente, usuario);
 		}
-	}
-
-	private void actualizarSalas() {
-		// mensaje tipo 2: actualizacion de salas
-		MensajeACliente msj = new MensajeACliente(null, salas, 2);
-		enviarMensajeATodosLosSockets(msj);
-
-	}
-
-	private void enviarMensajeATodosLosSockets(MensajeACliente msj) {
-		ObjectOutputStream salida;
-
-		try {
-			for (Socket envio : sockets) {
-				salida = mapaSocketsObjectOuput.get(envio);
-				salida.writeObject(msj);
-				salida.flush();
-				salida.reset();
-
-			}
-		} catch (IOException e) {
-			System.out.println("Error envio mensaje actualizando sala");
-			e.printStackTrace();
-		}
-
+		jugarTurnoSiguiente(partida);
 	}
 }
