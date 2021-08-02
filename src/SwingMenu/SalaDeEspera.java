@@ -356,6 +356,7 @@ public class SalaDeEspera extends JFrame {
 		if (menu != null)
 			menu.dispose();
 
+		if (gui != null) {
 			gui.rendirse();
 		}
 	}
