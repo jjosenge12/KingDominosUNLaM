@@ -23,6 +23,3 @@ Actualmente el juego permite:
   * Se pueden crear y unirse a salas con chat (in-game), para iniciar una partida
   * Existe la posibilidad de rendirse de una partida para entrar en otra.
 
-TODO:
-* Poder expulsar jugadores de salas
-* Agregar soporte del modo Dinastía al online
