@@ -1,5 +1,5 @@
 
-package SwingMenu;
+package swingMenu;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -29,11 +29,11 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import SwingApp.GUI;
 import netcode.Cliente;
 import netcode.MensajeACliente;
 import netcode.MensajeAServidor;
 import netcode.Sala;
+import swingApp.GUI;
 
 public class SalaDeEspera extends JFrame {
 
@@ -46,7 +46,7 @@ public class SalaDeEspera extends JFrame {
 	private JButton btnEnviar;
 	private Sala sala;
 	private JButton btnIniciarPartida;
-	private Menu menu = null;
+	private MenuCreacionPartida menu = null;
 	private GUI gui;
 
 	public SalaDeEspera(Sala sala, Cliente cliente) {
@@ -272,7 +272,7 @@ public class SalaDeEspera extends JFrame {
 
 	public void abrirMenuCreacionPartida(String nombresUsuarios) {
 		btnIniciarPartida.setEnabled(false);
-		menu = new Menu(cliente, sala, this, nombresUsuarios);
+		menu = new MenuCreacionPartida(cliente, sala, this, nombresUsuarios);
 	}
 
 	public void menuCerrado() {

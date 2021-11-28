@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import SwingApp.GUI;
+import swingApp.GUI;
 
 public class Partida {
 

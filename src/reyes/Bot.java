@@ -2,7 +2,7 @@ package reyes;
 
 import java.util.List;
 
-import SwingApp.GUI;
+import swingApp.GUI;
 
 public class Bot extends Jugador {
 

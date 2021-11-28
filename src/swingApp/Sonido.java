@@ -1,4 +1,4 @@
-package SwingApp;
+package swingApp;
 
 import java.io.File;
 import java.io.IOException;

@@ -2,8 +2,9 @@ package reyes;
 
 import java.util.ArrayList;
 import java.util.List;
-import SwingApp.PanelInformacion;
-import SwingApp.GUI;
+
+import swingApp.GUI;
+import swingApp.PanelInformacion;
 
 public class Tablero {
 	protected Ficha[][] tablero;

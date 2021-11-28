@@ -1,4 +1,4 @@
-package SwingMenu;
+package swingMenu;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -8,6 +8,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +31,11 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import SwingApp.CreadorDeMazo;
 import netcode.Cliente;
 import netcode.MensajeACliente;
 import netcode.MensajeAServidor;
 import netcode.Sala;
-import netcode.Servidor;
+import swingApp.CreadorDeMazo;
 
 public class Lobby extends JFrame {
 
@@ -188,15 +189,22 @@ public class Lobby extends JFrame {
 	}
 
 	private void conectarse() {
-		String respuesta = JOptionPane.showInputDialog(this, "Ingrese nombre de usuario:", "");
-		if (respuesta != null && !respuesta.equals("")) {
-			crearUsuario(respuesta);
-		}
+		new MenuConexion(this);
 	}
 
-	public void crearUsuario(String nombreCliente) {
-		cliente = new Cliente(nombreCliente, Servidor.IP, Servidor.PUERTO, this);
-		cliente.inicializarHiloCliente(this);
+	public void crearUsuario(String ip, int puerto, String nombreUsuario) {
+		if (nombreUsuario != null && !nombreUsuario.equals("")) {
+			try {
+				cliente = new Cliente(nombreUsuario, ip, puerto, this);
+				cliente.inicializarHiloCliente(this);
+			} catch (UnknownHostException e) {
+				mostrarErrorPorPantalla("Error host desconocido", "Error de conexion");
+			} catch (IOException e) {
+				mostrarErrorPorPantalla("No se puede conectar al servidor, intentelo nuevamente en unos minutos.",
+						"Error de conexion");
+			}
+
+		}
 	}
 
 	public void activarBotones() {
@@ -295,7 +303,7 @@ public class Lobby extends JFrame {
 	protected void unirseASala() {
 		String salaElegida = listaSalas.getSelectedValue();
 
-		if (salaElegida != null) {//En esta implementacion solo se puede estar en una sala(partida) a la vez
+		if (salaElegida != null) {// En esta implementacion solo se puede estar en una sala(partida) a la vez
 			boolean puedeAbrir = verificarCantidadSalas(1);
 			if (puedeAbrir) {
 				boolean abierta = isSalaAbierta(salaElegida);

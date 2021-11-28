@@ -1,4 +1,4 @@
-package SwingApp;
+package swingApp;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -21,7 +21,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import SwingMenu.SalaDeEspera;
 import netcode.Cliente;
 import netcode.MensajeACliente;
 import netcode.MensajeAServidor;
@@ -30,6 +29,7 @@ import reyes.Bot;
 import reyes.Carta;
 import reyes.Jugador;
 import reyes.Partida;
+import swingMenu.SalaDeEspera;
 
 public class GUI extends JFrame {
 
@@ -453,7 +453,7 @@ public class GUI extends JFrame {
 		emojis.add("☜(ﾟヮﾟ☜)");
 		emojis.add("╰(*°▽°*)╯");
 		emojis.add("＼(ﾟｰﾟ＼)");
-		emojis.add("(⌐■_■)");
+		emojis.add("(�?■_■)");
 		Collections.shuffle(emojis);
 
 		String mensajeDinastia = map.size() == 1 ? "Ganador de esta partida:\n" : "Ganadores de esta partida:\n";

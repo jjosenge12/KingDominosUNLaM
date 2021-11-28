@@ -1,4 +1,4 @@
-package SwingApp;
+package swingApp;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;

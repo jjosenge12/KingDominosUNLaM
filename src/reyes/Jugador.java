@@ -3,7 +3,7 @@ package reyes;
 import java.io.IOException;
 import java.util.List;
 
-import SwingApp.GUI;
+import swingApp.GUI;
 
 public class Jugador {
 

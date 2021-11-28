@@ -1,4 +1,4 @@
-package SwingApp;
+package swingApp;
 
 import java.awt.Color;
 import java.awt.event.MouseAdapter;

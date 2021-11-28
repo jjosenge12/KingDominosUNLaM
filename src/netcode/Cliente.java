@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import SwingMenu.Lobby;
+import swingMenu.Lobby;
 
 public class Cliente {
 
@@ -17,22 +17,15 @@ public class Cliente {
 	private Lobby lobby;
 	private HiloCliente hiloCliente;
 
-	public Cliente(String nombre, String ip, int puerto, Lobby lobby) {
+	public Cliente(String nombre, String ip, int puerto, Lobby lobby) throws UnknownHostException, IOException {
 		this.nombre = nombre;
 		this.lobby = lobby;
-		try {
-			socket = new Socket(ip, puerto);
-			salida = new ObjectOutputStream(socket.getOutputStream());
-			MensajeAServidor msj = new MensajeAServidor(nombre, null, 1);
-			enviarMensaje(msj);
-		} catch (UnknownHostException e) {
-			System.out.println("Error host desconocido");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("Error en conexion con el servidor");
-			lobby.mostrarErrorPorPantalla("No se puede conectar al servidor, intentelo nuevamente en unos minutos.", "Error de conexion");
-			e.printStackTrace();
-		}
+
+		socket = new Socket(ip, puerto);
+		salida = new ObjectOutputStream(socket.getOutputStream());
+		MensajeAServidor msj = new MensajeAServidor(nombre, null, 1);
+		enviarMensaje(msj);
+
 	}
 
 	public <T> void enviarMensaje(T msj) {
@@ -41,20 +34,21 @@ public class Cliente {
 				salida.reset();
 				salida.writeObject(msj);
 			} catch (IOException e) {
-				System.out.println("Error en envio de mensaje cliente");
+				lobby.mostrarErrorPorPantalla("Error en envio de mensaje cliente", "Error en envio de mensaje");
 				e.printStackTrace();
 			}
 		}
 	}
 
 	public void inicializarHiloCliente(Lobby ventana) {
-		hiloCliente=new HiloCliente(socket, entrada, ventana);
+		hiloCliente = new HiloCliente(socket, entrada, ventana);
 		hiloCliente.start();
 	}
 
 	public void cerrarHilo() {
 		hiloCliente.cerrar();
 	}
+
 	public static void main(String[] args) {
 		new Lobby();
 	}

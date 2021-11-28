@@ -1,4 +1,4 @@
-package SwingApp;
+package swingApp;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;

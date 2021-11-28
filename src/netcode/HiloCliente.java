@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
-import SwingMenu.Lobby;
+import swingMenu.Lobby;
 
 public class HiloCliente extends Thread {
 	private ObjectInputStream entrada;

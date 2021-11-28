@@ -1,4 +1,4 @@
-package SwingMenu;
+package swingMenu;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -27,16 +27,16 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import SwingApp.PanelFicha;
-import SwingApp.GUI;
 import netcode.Cliente;
 import netcode.MensajeAServidor;
 import netcode.Sala;
 import reyes.Carta;
 import reyes.Ficha;
 import reyes.Mazo;
+import swingApp.GUI;
+import swingApp.PanelFicha;
 
-public class Menu extends JFrame {
+public class MenuCreacionPartida extends JFrame {
 
 	private static final long serialVersionUID = -7979669249255750493L;
 	private JPanel contentPane;
@@ -56,7 +56,7 @@ public class Menu extends JFrame {
 	private Sala sala;
 	private List<String> usuarios;
 
-	public Menu(Cliente cliente, Sala sala, SalaDeEspera salaDeEspera, String nombresUsuarios) {
+	public MenuCreacionPartida(Cliente cliente, Sala sala, SalaDeEspera salaDeEspera, String nombresUsuarios) {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
