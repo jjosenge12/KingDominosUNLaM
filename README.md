@@ -1,6 +1,8 @@
 # KingDominosUNLaM
 Juego KingDominos por el equipo Appol
 
+Link video demo: [aquí](https://drive.google.com/file/d/1AqSqxcWaBmWb969Lh1vZnQEHMmJMkOBh/view)
+
 Implementación en Java usando Swing del juego KingDominos, como parte de un proyecto de cátedra para la Universidad Nacional de la Matanza, la consigna puede
 verse [aquí](https://github.com/programacion-avanzada/2021a/blob/main/consigna/README.md)
 
